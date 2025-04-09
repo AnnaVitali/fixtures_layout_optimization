@@ -27,8 +27,8 @@ def rectangle_suction_cup(lb_x, lb_y):
 
 def create_fixture(cup_type, lb_x, lb_y):
     if cup_type == 1:
-        return list(square_suction_cup(center_x, center_y))
+        return list(square_suction_cup(lb_x, lb_y))
     elif cup_type == 2:
-        return list(rectangle_suction_cup(center_x, center_y))
+        return list(rectangle_suction_cup(lb_x, lb_y))
     else:
         raise ValueError("Invalid cup type: must be 1 (square) or 2 (rectangle)")

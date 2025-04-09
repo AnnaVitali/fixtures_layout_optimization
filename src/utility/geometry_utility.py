@@ -11,4 +11,4 @@ def line_equation(x1, y1, x2, y2):
     """
     m = (y2 - y1) / (x2 - x1)
     q = y1 - m * x1
-    return m, q
+    return round(m, 2), round(q, 2)
