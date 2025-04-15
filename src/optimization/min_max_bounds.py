@@ -12,6 +12,7 @@ class MinMaxBounds:
     def __init__(self, workpiece_vertices):
         self.workpiece_vertices = workpiece_vertices
 
+
     def get_max_moments_fixtures(self):
         max_x, max_y = max(self.workpiece_vertices)
         vertices_x, vertices_y = create_fixture(MAX_CUP_TYPE, max_x, max_y)
