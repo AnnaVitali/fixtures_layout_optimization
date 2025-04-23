@@ -115,21 +115,21 @@ model.addConstrs(
 model.addConstrs((y[c] - EPS) * selected_fixture[c] >= (m_stay_above[l] * (x[c] + DIMS[c][0]) + q_stay_above[l]) *
                  selected_fixture[c]
                  for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
-model.addConstrs(((y[c] + DIMS[c][1]) - EPS) * selected_fixture[c] >= (m_stay_above[l] * x[c] + q_stay_above[l]) *
-                 selected_fixture[c]
-                 for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
-model.addConstrs(
-    ((y[c] + DIMS[c][1]) - EPS) * selected_fixture[c] >= (m_stay_above[l] * (x[c] + DIMS[c][0]) + q_stay_above[l]) *
-    selected_fixture[
-        c]
-    for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
+# model.addConstrs(((y[c] + DIMS[c][1]) - EPS) * selected_fixture[c] >= (m_stay_above[l] * x[c] + q_stay_above[l]) *
+#                  selected_fixture[c]
+#                  for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
+# model.addConstrs(
+#     ((y[c] + DIMS[c][1]) - EPS) * selected_fixture[c] >= (m_stay_above[l] * (x[c] + DIMS[c][0]) + q_stay_above[l]) *
+#     selected_fixture[
+#         c]
+#     for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
 
-model.addConstrs(
-    (y[c] + EPS) * selected_fixture[c] <= (m_stay_below[l] * x[c] + q_stay_below[l]) * selected_fixture[c]
-    for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
-model.addConstrs((y[c] + EPS) * selected_fixture[c] <= (m_stay_below[l] * (x[c] + DIMS[c][0]) + q_stay_below[l]) *
-                 selected_fixture[c]
-                 for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
+# model.addConstrs(
+#     (y[c] + EPS) * selected_fixture[c] <= (m_stay_below[l] * x[c] + q_stay_below[l]) * selected_fixture[c]
+#     for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
+# model.addConstrs((y[c] + EPS) * selected_fixture[c] <= (m_stay_below[l] * (x[c] + DIMS[c][0]) + q_stay_below[l]) *
+#                  selected_fixture[c]
+#                  for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
 model.addConstrs(((y[c] + DIMS[c][1]) + EPS) * selected_fixture[c] <= (m_stay_below[l] * x[c] + q_stay_below[l]) *
                  selected_fixture[c]
                  for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
@@ -191,8 +191,8 @@ model.addConstrs(
 # symmetry breaking constraints
 model.addConstr(gp.quicksum(selected_fixture[c] for c in range(FIXTURES_NUMBER)) >= 1, name="at_least_one_fixture")
 
-model.addConstrs((selected_fixture[c] == 0) >> (x[c] <= 0) for c in range(FIXTURES_NUMBER))
-model.addConstrs((selected_fixture[c] == 0) >> (y[c] <= 0) for c in range(FIXTURES_NUMBER))
+# model.addConstrs((selected_fixture[c] == 0) >> (x[c] <= 0) for c in range(FIXTURES_NUMBER))
+# model.addConstrs((selected_fixture[c] == 0) >> (y[c] <= 0) for c in range(FIXTURES_NUMBER))
 
 model.addConstrs(
     (x[c1] + y[c1]) + EPS >= (x[c2] + y[c2]) for c1 in range(FIXTURES_NUMBER) for c2 in
@@ -236,9 +236,14 @@ model.setObjective(
     gp.quicksum(cx_dist[c] for c in range(FIXTURES_NUMBER)) + gp.quicksum(
         cy_dist[c] for c in range(FIXTURES_NUMBER)), GRB.MAXIMIZE)
 
+model.setParam("Cuts", 2)       # Use aggressive cuts
+model.setParam("VarBranch", 1)  # Change variable selection for branching
+model.setParam("BranchDir", 1)  # Favor improving bounds
+model.setParam("Heuristics", 0.5)  # Increase heuristic search
+model.setParam("RINS", 10)      # Use RINS heuristic
+#model.setParam("NonConvex", 2)
 
-
-optimization_callback = OptimizationCallback(threshold=5)
+optimization_callback = OptimizationCallback(threshold=7)
 model.optimize(optimization_callback)
 
 if model.SolCount > 0:
@@ -262,7 +267,7 @@ if model.SolCount > 0:
         "objective_value": model.objVal
     }
 
-    file_path = '../resources/results.json'
+    file_path = '../resources/results_distance_obj.json'
 
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
 

@@ -26,7 +26,7 @@ class InertiaAnalysis:
         jx = 0
         jy = 0
         jxy = 0
-        print(f"vertices: {vertices}")
+
         for i in range(n):
             x_i, y_i = vertices[i]
             x_next, y_next = vertices[i + 1]
