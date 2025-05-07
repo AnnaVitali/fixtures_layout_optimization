@@ -1,26 +1,25 @@
-def square_suction_cup(lb_x, lb_y):
-    square_side = 145
+SQUARE_CUP_DIM = 145
+RECTANGULAR_CUP_DIM_X = 145
+RECTANGULAR_CUP_DIM_Y = 55
 
+def square_suction_cup(lb_x, lb_y):
     square_coords = [
         (lb_x, lb_y),
-        (lb_x, lb_y + square_side),
-        (lb_x + square_side, lb_y + square_side),
-        (lb_x + square_side, lb_y),
-        (lb_x, lb_y),  # Close the square
+        (lb_x, lb_y + SQUARE_CUP_DIM),
+        (lb_x + SQUARE_CUP_DIM, lb_y + SQUARE_CUP_DIM),
+        (lb_x + SQUARE_CUP_DIM, lb_y),
+        (lb_x, lb_y),
     ]
     return zip(*square_coords)
 
 
 def rectangle_suction_cup(lb_x, lb_y):
-    width = 145
-    height = 55
-
     rectangle_coords = [
         (lb_x, lb_y),
-        (lb_x, lb_y + height),
-        (lb_x + width, lb_y + height),
-        (lb_x + width, lb_y),
-        (lb_x, lb_y),  # Close the square
+        (lb_x, lb_y + RECTANGULAR_CUP_DIM_Y),
+        (lb_x + RECTANGULAR_CUP_DIM_X, lb_y + RECTANGULAR_CUP_DIM_Y),
+        (lb_x + RECTANGULAR_CUP_DIM_X, lb_y),
+        (lb_x, lb_y),
     ]
     return zip(*rectangle_coords)
 

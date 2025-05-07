@@ -72,6 +72,12 @@ class ResultDisplayer:
         print(f"Principal Moment of Inertia J: {j_yg:.5e}")
         print(f"Sum of I and J: {j_xg + j_yg:.5e}")
 
+        print("\n----------Manhattan distance----------\n")
+        manhattan_distance = 0
+        for i, poly in enumerate(polygons, 1):
+            manhattan_distance += self.__compute_manhattan_distance(x_g, y_g, poly["barycenter"][0], poly["barycenter"][1])
+        print(f"Manhattan distance fixture{i}: {manhattan_distance:.5e}")
+
         # Plot
         plt.figure(figsize=(8, 6))
         x_workpiece, y_workpiece = zip(*self.workpiece_vertices )
@@ -136,6 +142,11 @@ class ResultDisplayer:
 
     def __truncate(self, f, n):
         return math.floor(f * 10**n) / 10**n
+
+    def __compute_manhattan_distance(self, center_x, center_y, fixture_x, fixture_y):
+        point1 = (center_x, center_y)
+        point2 = (fixture_x, fixture_y)
+        return abs(point1[0] - point2[0]) + abs(point1[1] - point2[1])
 
 
 

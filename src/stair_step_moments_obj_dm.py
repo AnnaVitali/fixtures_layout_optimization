@@ -3,43 +3,49 @@ from gurobipy import GRB
 
 from optimization.min_max_bounds import MinMaxBounds
 from utility.geometry_utility import line_equation
+from utility.fixtures_utiility import SQUARE_CUP_DIM, RECTANGULAR_CUP_DIM_X, RECTANGULAR_CUP_DIM_Y
 from utility.result_displayer import ResultDisplayer
-from optimization.optimization_callback import OptimizationCallback
 import os
 import json
 
-WIDTH = 698
-HEIGHT = 380
-AREA = 175769
-VERTEX_A = (665, 394)
-VERTEX_B = (20, 262)
-VERTEX_C = (20, 135)
-VERTEX_D = (665, 4)
-VERTEX_E = (689, 17)
-VERTEX_F = (689, 380)
+MM_TO_DM = 0.01
+MM2_TO_DM2 = 0.0001
 
-BAR_SIZE = 145
+WIDTH = 698 * MM_TO_DM
+HEIGHT = 380 * MM_TO_DM
+AREA = 175769 * MM2_TO_DM2
+
+VERTEX_A = (665 * MM_TO_DM, 394 * MM_TO_DM)
+VERTEX_B = (20 * MM_TO_DM, 262 * MM_TO_DM)
+VERTEX_C = (20 * MM_TO_DM, 135 * MM_TO_DM)
+VERTEX_D = (665 * MM_TO_DM, 4 * MM_TO_DM)
+VERTEX_E = (689 * MM_TO_DM, 17 * MM_TO_DM)
+VERTEX_F = (689 * MM_TO_DM, 380 * MM_TO_DM)
+
+BAR_SIZE = 145 * MM_TO_DM
 
 FIXTURE_A_NUMBER = 5
-FIXTURE_A_DIMX = 145
-FIXTURE_A_DIMY = 145
+FIXTURE_A_DIMX = SQUARE_CUP_DIM * MM_TO_DM
+FIXTURE_A_DIMY = SQUARE_CUP_DIM * MM_TO_DM
 
 FIXTURE_B_NUMBER = 5
-FIXTURE_B_DIMX = 145
-FIXTURE_B_DIMY = 55
+FIXTURE_B_DIMX = RECTANGULAR_CUP_DIM_X * MM_TO_DM
+FIXTURE_B_DIMY = RECTANGULAR_CUP_DIM_Y * MM_TO_DM
 
 N_FIXTURES_TYPE = 2
 FIXTURE_TYPE = [1] * FIXTURE_A_NUMBER + [2] * FIXTURE_B_NUMBER
 FIXTURE_AREA = [FIXTURE_A_DIMX * FIXTURE_A_DIMY] * FIXTURE_A_NUMBER + [
-    FIXTURE_B_DIMX * FIXTURE_B_DIMY] * FIXTURE_B_NUMBER
+    FIXTURE_B_DIMX * FIXTURE_B_DIMY
+] * FIXTURE_B_NUMBER
 
 FIXTURES_NUMBER = FIXTURE_A_NUMBER + FIXTURE_B_NUMBER
 
-DIMS = [[FIXTURE_A_DIMX, FIXTURE_A_DIMY]] * FIXTURE_A_NUMBER + [[FIXTURE_B_DIMX, FIXTURE_B_DIMY]] * FIXTURE_B_NUMBER
-#HALF_DIM = [[73, 73]] * FIXTURE_A_NUMBER + [[73, 28]] * FIXTURE_B_NUMBER#[[FIXTURE_A_DIMX / 2, FIXTURE_A_DIMY / 2]] * FIXTURE_A_NUMBER + [[FIXTURE_B_DIMX / 2, FIXTURE_B_DIMY / 2]] * FIXTURE_B_NUMBER
-HALF_DIM = [[FIXTURE_A_DIMX / 2, FIXTURE_A_DIMY / 2]] * FIXTURE_A_NUMBER + [[FIXTURE_B_DIMX / 2, FIXTURE_B_DIMY / 2]] * FIXTURE_B_NUMBER
-EPS = 1.0
+DIMS = [[FIXTURE_A_DIMX, FIXTURE_A_DIMY], [FIXTURE_B_DIMX, FIXTURE_B_DIMY]]
+HALF_DIM = [[FIXTURE_A_DIMX / 2, FIXTURE_A_DIMY / 2], [FIXTURE_B_DIMX / 2, FIXTURE_B_DIMY / 2]]
+
+EPS = 0.1 * MM_TO_DM
 M = (WIDTH * HEIGHT) ** 2
+MAX_F = int(AREA / (145 * 145 * 2 * MM2_TO_DM2))
 
 line_a_q = VERTEX_B[0]
 line_b_m, line_b_q = line_equation(VERTEX_B[0], VERTEX_B[1], VERTEX_A[0], VERTEX_A[1])
@@ -77,79 +83,86 @@ model = gp.Model("fixture_layout_optimization")
 bounds = MinMaxBounds([VERTEX_A, VERTEX_B, VERTEX_C, VERTEX_D, VERTEX_E, VERTEX_F])
 
 #Variables
-x = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x")
-x2 = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x2")
-x3 = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x3")
-x4 = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x4")
+x = model.addVars(MAX_F, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x")
+x2 = model.addVars(MAX_F, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x2")
+x3 = model.addVars(MAX_F, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x3")
+x4 = model.addVars(MAX_F, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x4")
 
-y = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y")
-y2 = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y2")
-y3 = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y3")
-y4 = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y4")
+y = model.addVars(MAX_F, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y")
+y2 = model.addVars(MAX_F, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y2")
+y3 = model.addVars(MAX_F, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y3")
+y4 = model.addVars(MAX_F, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y4")
 
-selected_fixture = model.addVars(FIXTURES_NUMBER, vtype=GRB.BINARY, name="selected_fixture")
-pair_selected = model.addVars(FIXTURES_NUMBER, FIXTURES_NUMBER, vtype=GRB.BINARY, name="x_selected")
+selected_fixture = model.addVars(MAX_F, N_FIXTURES_TYPE, vtype=GRB.BINARY, name="selected_fixture")
+fixture_type = model.addVars(MAX_F, lb=0, ub=N_FIXTURES_TYPE, vtype=GRB.CONTINUOUS, name="fixture_type")
+pair_selected = model.addVars(MAX_F, MAX_F, vtype=GRB.BINARY, name="x_selected")
 
-no_overlap = model.addVars(FIXTURES_NUMBER, FIXTURES_NUMBER, 4, vtype=GRB.BINARY, name="no_overlap")
+no_overlap = model.addVars(MAX_F, MAX_F, 4, vtype=GRB.BINARY, name="no_overlap")
 
-x1_greater_x2 = model.addVars(FIXTURES_NUMBER, FIXTURES_NUMBER, vtype=GRB.BINARY, name=f"x1_greater_x2")
-x2_greater_x1 = model.addVars(FIXTURES_NUMBER, FIXTURES_NUMBER, vtype=GRB.BINARY, name=f"x2_greater_x1")
+x1_greater_x2 = model.addVars(MAX_F, MAX_F, vtype=GRB.BINARY, name=f"x1_greater_x2")
+x2_greater_x1 = model.addVars(MAX_F, MAX_F, vtype=GRB.BINARY, name=f"x2_greater_x1")
 
-fixtures_center_x = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="fixtures_center_x")
-fixtures_center_y = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="fixtures_center_y")
+fixtures_center_x = model.addVars(MAX_F, lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="fixtures_center_x")
+fixtures_center_y = model.addVars(MAX_F, lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="fixtures_center_y")
 
 weighted_cx_sum = model.addVar(lb=0, vtype=GRB.CONTINUOUS, name="weighted_cx_sum")
 weighted_cy_sum = model.addVar(lb=0, vtype=GRB.CONTINUOUS, name="weighted_cy_sum")
 x_g = model.addVar(lb=0, ub=WIDTH, vtype=GRB.CONTINUOUS, name="x_g")
 y_g = model.addVar(lb=0, ub=HEIGHT, vtype=GRB.CONTINUOUS, name="y_g")
 
-x_square = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH * WIDTH, vtype=GRB.CONTINUOUS, name="x1_square")
-x2_square = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH * WIDTH, vtype=GRB.CONTINUOUS, name="x2_square")
-x3_square = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH * WIDTH, vtype=GRB.CONTINUOUS, name="x3_square")
-x4_square = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH * WIDTH, vtype=GRB.CONTINUOUS, name="x4_square")
+q = model.addVars(MAX_F, vtype=GRB.BINARY, name="q")
+fixture_dims_x = model.addVars(MAX_F, lb=0, ub=FIXTURE_A_DIMX, vtype=GRB.CONTINUOUS, name="fixture_type")
+fixture_dims_y = model.addVars(MAX_F, lb=0, ub=FIXTURE_A_DIMY, vtype=GRB.CONTINUOUS, name="fixture_type")
+fixture_half_dims_x = model.addVars(MAX_F, lb=0, ub=FIXTURE_A_DIMX / 2, vtype=GRB.CONTINUOUS, name="half_dims_x")
+fixture_half_dims_y = model.addVars(MAX_F, lb=0, ub=FIXTURE_A_DIMY / 2, vtype=GRB.CONTINUOUS, name="half_dims_y")
 
-y_square = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT * HEIGHT, vtype=GRB.CONTINUOUS, name="y1_square")
-y2_square = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT * HEIGHT, vtype=GRB.CONTINUOUS, name="y2_square")
-y3_square = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT * HEIGHT, vtype=GRB.CONTINUOUS, name="y3_square")
-y4_square = model.addVars(FIXTURES_NUMBER, lb=0, ub=HEIGHT * HEIGHT, vtype=GRB.CONTINUOUS, name="y4_square")
+x_square = model.addVars(MAX_F, lb=0, ub=WIDTH * WIDTH, vtype=GRB.CONTINUOUS, name="x1_square")
+x2_square = model.addVars(MAX_F, lb=0, ub=WIDTH * WIDTH, vtype=GRB.CONTINUOUS, name="x2_square")
+x3_square = model.addVars(MAX_F, lb=0, ub=WIDTH * WIDTH, vtype=GRB.CONTINUOUS, name="x3_square")
+x4_square = model.addVars(MAX_F, lb=0, ub=WIDTH * WIDTH, vtype=GRB.CONTINUOUS, name="x4_square")
 
-xy_bl = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH * HEIGHT, vtype=GRB.CONTINUOUS, name="xy_bl")
-xy_br = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH * HEIGHT, vtype=GRB.CONTINUOUS, name="xy_br")
-xy_tl = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH * HEIGHT, vtype=GRB.CONTINUOUS, name="xy_tl")
-xy_tr = model.addVars(FIXTURES_NUMBER, lb=0, ub=WIDTH * HEIGHT, vtype=GRB.CONTINUOUS, name="xy_tr")
+y_square = model.addVars(MAX_F, lb=0, ub=HEIGHT * HEIGHT, vtype=GRB.CONTINUOUS, name="y1_square")
+y2_square = model.addVars(MAX_F, lb=0, ub=HEIGHT * HEIGHT, vtype=GRB.CONTINUOUS, name="y2_square")
+y3_square = model.addVars(MAX_F, lb=0, ub=HEIGHT * HEIGHT, vtype=GRB.CONTINUOUS, name="y3_square")
+y4_square = model.addVars(MAX_F, lb=0, ub=HEIGHT * HEIGHT, vtype=GRB.CONTINUOUS, name="y4_square")
+
+xy_bl = model.addVars(MAX_F, lb=0, ub=WIDTH * HEIGHT, vtype=GRB.CONTINUOUS, name="xy_bl")
+xy_br = model.addVars(MAX_F, lb=0, ub=WIDTH * HEIGHT, vtype=GRB.CONTINUOUS, name="xy_br")
+xy_tl = model.addVars(MAX_F, lb=0, ub=WIDTH * HEIGHT, vtype=GRB.CONTINUOUS, name="xy_tl")
+xy_tr = model.addVars(MAX_F, lb=0, ub=WIDTH * HEIGHT, vtype=GRB.CONTINUOUS, name="xy_tr")
 
 max_jx, max_jy, max_jxy = bounds.get_max_moments_fixtures()
-jx_fixture = model.addVars(FIXTURES_NUMBER, lb=0, ub=max_jx, vtype=GRB.CONTINUOUS, name="jx_fixture")
-jy_fixture = model.addVars(FIXTURES_NUMBER, lb=0, ub=max_jy, vtype=GRB.CONTINUOUS, name="jy_fixture")
-jxy_fixture = model.addVars(FIXTURES_NUMBER, lb=0, ub=max_jxy, vtype=GRB.CONTINUOUS, name="jxy_fixture")
+jx_fixture = model.addVars(MAX_F, lb=0, ub=max_jx, vtype=GRB.CONTINUOUS, name="jx_fixture")
+jy_fixture = model.addVars(MAX_F, lb=0, ub=max_jy, vtype=GRB.CONTINUOUS, name="jy_fixture")
+jxy_fixture = model.addVars(MAX_F, lb=0, ub=max_jxy, vtype=GRB.CONTINUOUS, name="jxy_fixture")
 
 max_jx_terms, max_jy_terms, max_jxy_terms = bounds.get_max_multiplication_of_terms()
 min_jx_terms, min_jy_terms, min_jxy_terms  = bounds.get_min_multiplication_of_terms()
-term1_jx = model.addVars(FIXTURES_NUMBER, lb=min_jx_terms[0] if min_jx_terms[0] < 0 else 0,
+term1_jx = model.addVars(MAX_F, lb=min_jx_terms[0] if min_jx_terms[0] < 0 else 0,
                          ub=max_jx_terms[0] if max_jx_terms[0] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term1_jx")
-term2_jx = model.addVars(FIXTURES_NUMBER,  lb=max_jx_terms[1] if max_jx_terms[1] < 0 else 0,
+term2_jx = model.addVars(MAX_F,  lb=max_jx_terms[1] if max_jx_terms[1] < 0 else 0,
                          ub=min_jx_terms[1] if min_jx_terms[1] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term2_jx")
-term3_jx = model.addVars(FIXTURES_NUMBER,  lb=max_jx_terms[2] if max_jx_terms[2] < 0 else 0,
+term3_jx = model.addVars(MAX_F,  lb=max_jx_terms[2] if max_jx_terms[2] < 0 else 0,
                          ub=min_jx_terms[2] if min_jx_terms[2] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term3_jx")
-term4_jx = model.addVars(FIXTURES_NUMBER,  lb=min_jx_terms[0] if min_jx_terms[0] < 0 else 0,
+term4_jx = model.addVars(MAX_F,  lb=min_jx_terms[0] if min_jx_terms[0] < 0 else 0,
                          ub=max_jx_terms[3] if max_jx_terms[3] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term4_jx")
 
-term1_jy = model.addVars(FIXTURES_NUMBER, lb=min_jy_terms[0] if min_jy_terms[0] < 0 else 0,
+term1_jy = model.addVars(MAX_F, lb=min_jy_terms[0] if min_jy_terms[0] < 0 else 0,
                          ub=max_jy_terms[0] if max_jy_terms[0] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term1_jy")
-term2_jy = model.addVars(FIXTURES_NUMBER, lb=max_jy_terms[1] if max_jy_terms[1] < 0 else 0,
+term2_jy = model.addVars(MAX_F, lb=max_jy_terms[1] if max_jy_terms[1] < 0 else 0,
                          ub=min_jy_terms[1] if min_jy_terms[1] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term2_jy")
-term3_jy = model.addVars(FIXTURES_NUMBER, lb=max_jy_terms[2] if max_jy_terms[2] < 0 else 0,
+term3_jy = model.addVars(MAX_F, lb=max_jy_terms[2] if max_jy_terms[2] < 0 else 0,
                          ub=min_jy_terms[2] if min_jy_terms[2] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term3_jy")
-term4_jy = model.addVars(FIXTURES_NUMBER, lb=min_jy_terms[3] if min_jy_terms[3] < 0 else 0,
+term4_jy = model.addVars(MAX_F, lb=min_jy_terms[3] if min_jy_terms[3] < 0 else 0,
                          ub=max_jy_terms[3] if max_jy_terms[3] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term4_jy")
 
-term1_jxy = model.addVars(FIXTURES_NUMBER, lb=min_jxy_terms[0] if min_jxy_terms[0] < 0 else 0,
+term1_jxy = model.addVars(MAX_F, lb=min_jxy_terms[0] if min_jxy_terms[0] < 0 else 0,
                          ub=max_jxy_terms[0] if max_jxy_terms[0] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term1_jxy")
-term2_jxy = model.addVars(FIXTURES_NUMBER, lb=max_jxy_terms[1] if max_jxy_terms[1] < 0 else 0,
+term2_jxy = model.addVars(MAX_F, lb=max_jxy_terms[1] if max_jxy_terms[1] < 0 else 0,
                          ub=min_jxy_terms[1] if min_jxy_terms[1] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term2_jxy")
-term3_jxy = model.addVars(FIXTURES_NUMBER, lb=max_jxy_terms[2] if max_jxy_terms[2] < 0 else 0,
+term3_jxy = model.addVars(MAX_F, lb=max_jxy_terms[2] if max_jxy_terms[2] < 0 else 0,
                          ub=min_jxy_terms[2] if min_jxy_terms[2] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term3_jxy")
-term4_jxy = model.addVars(FIXTURES_NUMBER, lb=min_jxy_terms[3] if min_jxy_terms[3] < 0 else 0,
+term4_jxy = model.addVars(MAX_F, lb=min_jxy_terms[3] if min_jxy_terms[3] < 0 else 0,
                          ub=max_jxy_terms[3] if max_jxy_terms[3] > 0 else 0, vtype=GRB.CONTINUOUS, name=f"term4_jxy")
 
 jx_g = model.addVar(lb=0, vtype=GRB.CONTINUOUS, name="jx_g")
@@ -175,139 +188,178 @@ square_of_root = model.addVar(lb=0, ub=1e20, vtype=GRB.CONTINUOUS, name="square_
 i = model.addVar(lb=-GRB.INFINITY, ub=GRB.INFINITY, vtype=GRB.CONTINUOUS, name="i")
 j = model.addVar(lb=-GRB.INFINITY, ub=GRB.INFINITY, vtype=GRB.CONTINUOUS, name="i")
 
-#Geometry constraints
-#fit in workpiece area
-model.addConstrs((x[c] + DIMS[c][0]) * selected_fixture[c] <= WIDTH for c in range(FIXTURES_NUMBER))
-model.addConstrs((y[c] + DIMS[c][1]) * selected_fixture[c] <= HEIGHT for c in range(FIXTURES_NUMBER))
+model.addConstrs(q[c] == gp.quicksum(selected_fixture[c,t] for t in range(N_FIXTURES_TYPE)) for c in range(MAX_F))
 
-model.addConstrs(x[c] >= (q_stay_left[l] + EPS) * selected_fixture[c] for c in range(FIXTURES_NUMBER) for l in
+model.addConstrs(
+    (selected_fixture[c,t] == 1) >> (fixture_type[c] == t + 1)
+    for c in range(MAX_F)
+    for t in range(N_FIXTURES_TYPE)
+)
+
+model.addConstrs(
+    (selected_fixture[c,t] == 1) >> (fixture_dims_x[c] == DIMS[t][0])
+    for c in range(MAX_F)
+    for t in range(N_FIXTURES_TYPE)
+)
+model.addConstrs(
+    (selected_fixture[c,t] == 1) >> (fixture_dims_y[c] == DIMS[t][1])
+    for c in range(MAX_F)
+    for t in range(N_FIXTURES_TYPE)
+)
+model.addConstrs(
+    (selected_fixture[c,t] == 1) >> (fixture_half_dims_x[c] == HALF_DIM[t][0])
+    for c in range(MAX_F)
+    for t in range(N_FIXTURES_TYPE)
+)
+model.addConstrs(
+    (selected_fixture[c,t] == 1) >> (fixture_half_dims_y[c] == HALF_DIM[t][1])
+    for c in range(MAX_F)
+    for t in range(N_FIXTURES_TYPE)
+)
+
+model.addConstrs(gp.quicksum(selected_fixture[c, t] for t in range(N_FIXTURES_TYPE)) <= 1 for c in range(MAX_F))
+model.addConstr(gp.quicksum(selected_fixture[c, 0] for c in range(MAX_F)) <= FIXTURE_A_NUMBER)
+model.addConstr(gp.quicksum(selected_fixture[c, 1] for c in range(MAX_F)) <= FIXTURE_B_NUMBER)
+
+#Geometry constraints
+# fit in workpiece area
+model.addConstrs((x[c] + fixture_dims_x[c]) * selected_fixture[c, t] <= WIDTH for c in range(MAX_F) for t in range(N_FIXTURES_TYPE))
+model.addConstrs((y[c] + fixture_dims_y[c]) * selected_fixture[c, t] <= WIDTH for c in range(MAX_F) for t in range(N_FIXTURES_TYPE))
+
+model.addConstrs(x[c] >= (q_stay_left[l] + EPS) * selected_fixture[c,t] for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in
                  range(n_stay_left_line))
 model.addConstrs(
-    (x[c] + DIMS[c][0] + EPS) * selected_fixture[c] <= q_stay_right[l] for c in range(FIXTURES_NUMBER) for l in
+    (x[c] + fixture_dims_x[c] + EPS) * selected_fixture[c, t] <= q_stay_right[l] for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in
     range(n_stay_right_line))
 
 model.addConstrs(
-    (y[c] - EPS) * selected_fixture[c] >= (m_stay_above[l] * x[c] + q_stay_above[l]) * selected_fixture[c]
-    for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
-model.addConstrs((y[c] - EPS) * selected_fixture[c] >= (m_stay_above[l] * (x[c] + DIMS[c][0]) + q_stay_above[l]) *
-                 selected_fixture[c]
-                 for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
-# model.addConstrs(((y[c] + DIMS[c][1]) - EPS) * selected_fixture[c] >= (m_stay_above[l] * x[c] + q_stay_above[l]) *
-#                  selected_fixture[c]
-#                  for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
-# model.addConstrs(
-#     ((y[c] + DIMS[c][1]) - EPS) * selected_fixture[c] >= (m_stay_above[l] * (x[c] + DIMS[c][0]) + q_stay_above[l]) *
-#     selected_fixture[
-#         c]
-#     for c in range(FIXTURES_NUMBER) for l in range(n_stay_above_line))
-
-# model.addConstrs(
-#     (y[c] + EPS) * selected_fixture[c] <= (m_stay_below[l] * x[c] + q_stay_below[l]) * selected_fixture[c]
-#     for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
-# model.addConstrs((y[c] + EPS) * selected_fixture[c] <= (m_stay_below[l] * (x[c] + DIMS[c][0]) + q_stay_below[l]) *
-#                  selected_fixture[c]
-#                  for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
-model.addConstrs(((y[c] + DIMS[c][1]) + EPS) * selected_fixture[c] <= (m_stay_below[l] * x[c] + q_stay_below[l]) *
-                 selected_fixture[c]
-                 for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
+    (y[c] - EPS) * selected_fixture[c,t] >= (m_stay_above[l] * x[c] + q_stay_above[l]) * selected_fixture[c,t]
+    for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in range(n_stay_above_line))
+model.addConstrs((y[c] - EPS) * selected_fixture[c,t] >= (m_stay_above[l] * (x[c] + fixture_dims_x[c]) + q_stay_above[l]) *
+                 selected_fixture[c,t]
+                 for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in range(n_stay_above_line))
+model.addConstrs(((y[c] + fixture_dims_y[c]) - EPS) * selected_fixture[c,t] >= (m_stay_above[l] * x[c] + q_stay_above[l]) *
+                 selected_fixture[c,t]
+                 for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in range(n_stay_above_line))
 model.addConstrs(
-    ((y[c] + DIMS[c][1]) + EPS) * selected_fixture[c] <= (m_stay_below[l] * (x[c] + DIMS[c][0]) + q_stay_below[l]) *
+    ((y[c] + fixture_dims_y[c]) - EPS) * selected_fixture[c,t] >= (m_stay_above[l] * (x[c] + fixture_dims_x[c]) + q_stay_above[l]) *
     selected_fixture[
-        c]
-    for c in range(FIXTURES_NUMBER) for l in range(n_stay_below_line))
+        c,t]
+    for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in range(n_stay_above_line))
 
+model.addConstrs(
+    (y[c] + EPS) * selected_fixture[c,t] <= (m_stay_below[l] * x[c] + q_stay_below[l]) * selected_fixture[c,t]
+    for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in range(n_stay_below_line))
+model.addConstrs((y[c] + EPS) * selected_fixture[c,t] <= (m_stay_below[l] * (x[c] + fixture_dims_x[c]) + q_stay_below[l]) *
+                 selected_fixture[c,t]
+                 for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in range(n_stay_below_line))
+model.addConstrs(((y[c] + fixture_dims_y[c]) + EPS) * selected_fixture[c,t] <= (m_stay_below[l] * x[c] + q_stay_below[l]) *
+                 selected_fixture[c,t]
+                 for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in range(n_stay_below_line))
+model.addConstrs(
+    ((y[c] + fixture_dims_y[c]) + EPS) * selected_fixture[c,t] <= (m_stay_below[l] * (x[c] + fixture_dims_x[c]) + q_stay_below[l]) *
+    selected_fixture[
+        c,t]
+    for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) for l in range(n_stay_below_line))
 
 # no overlap between fixtures
 model.addConstrs(
-    pair_selected[c1, c2] <= selected_fixture[c1] for c1 in range(FIXTURES_NUMBER) for c2 in range(FIXTURES_NUMBER)
+    pair_selected[c1, c2] <= gp.quicksum(selected_fixture[c1,t] for t in range(N_FIXTURES_TYPE)) for c1 in range(MAX_F) for c2 in range(MAX_F)
     if c1 != c2)
 model.addConstrs(
-    pair_selected[c1, c2] <= selected_fixture[c2] for c1 in range(FIXTURES_NUMBER) for c2 in range(FIXTURES_NUMBER)
+    pair_selected[c1, c2] <= gp.quicksum(selected_fixture[c2,t] for t in range(N_FIXTURES_TYPE)) for c1 in range(MAX_F) for c2 in range(MAX_F)
     if c1 != c2)
 model.addConstrs(
-    pair_selected[c1, c2] >= selected_fixture[c1] + selected_fixture[c2] - 1 for c1 in range(FIXTURES_NUMBER) for c2
-    in
-    range(FIXTURES_NUMBER) if c1 != c2)
+    pair_selected[c1, c2] >= gp.quicksum(selected_fixture[c1,t] + selected_fixture[c2,t] for t in range(N_FIXTURES_TYPE)) - 1 for c1 in range(MAX_F) for c2
+    in range(MAX_F) if c1 != c2)
 
-model.addConstrs((x[c1] + DIMS[c1][0]) * pair_selected[c1, c2] <= x[c2] + M * (1 - no_overlap[c1, c2, 0]) for c1 in
-                 range(FIXTURES_NUMBER) for c2 in range(c1 + 1, FIXTURES_NUMBER))
-model.addConstrs((x[c2] + DIMS[c2][0]) * pair_selected[c1, c2] <= x[c1] + M * (1 - no_overlap[c1, c2, 1]) for c1 in
-                 range(FIXTURES_NUMBER) for c2 in range(c1 + 1, FIXTURES_NUMBER))
-model.addConstrs((y[c1] + DIMS[c1][1]) * pair_selected[c1, c2] <= y[c2] + M * (1 - no_overlap[c1, c2, 2]) for c1 in
-                 range(FIXTURES_NUMBER) for c2 in range(c1 + 1, FIXTURES_NUMBER))
-model.addConstrs((y[c2] + DIMS[c2][1]) * pair_selected[c1, c2] <= y[c1] + M * (1 - no_overlap[c1, c2, 3]) for c1 in
-                 range(FIXTURES_NUMBER) for c2 in range(c1 + 1, FIXTURES_NUMBER))
-
+model.addConstrs((x[c1] + fixture_dims_x[c1]) * pair_selected[c1, c2] <= x[c2] + M * (1 - no_overlap[c1, c2, 0]) for c1 in
+                 range(MAX_F) for c2 in range(c1 + 1, MAX_F))
+model.addConstrs((x[c2] + fixture_dims_x[c2]) * pair_selected[c1, c2] <= x[c1] + M * (1 - no_overlap[c1, c2, 1]) for c1 in
+                 range(MAX_F) for c2 in range(c1 + 1, MAX_F))
+model.addConstrs((y[c1] + fixture_dims_y[c1]) * pair_selected[c1, c2] <= y[c2] + M * (1 - no_overlap[c1, c2, 2]) for c1 in
+                 range(MAX_F) for c2 in range(c1 + 1, MAX_F))
+model.addConstrs((y[c2] + fixture_dims_y[c2]) * pair_selected[c1, c2] <= y[c1] + M * (1 - no_overlap[c1, c2, 3]) for c1 in
+                 range(MAX_F) for c2 in range(c1 + 1, MAX_F))
+#
 model.addConstrs(
-    gp.quicksum(no_overlap[c1, c2, i] for i in range(4)) >= 1 for c1 in range(FIXTURES_NUMBER) for c2 in
-    range(c1 + 1, FIXTURES_NUMBER))
+    gp.quicksum(no_overlap[c1, c2, i] for i in range(4)) >= 1 for c1 in range(MAX_F) for c2 in
+    range(c1 + 1, MAX_F))
 
 # respect bar distance
 model.addConstrs(
     x[c1] * pair_selected[c1, c2] >= (x[c2] + EPS - M * (1 - x1_greater_x2[c1, c2])) * pair_selected[c1, c2]
-    for c1 in range(FIXTURES_NUMBER) for c2 in range(FIXTURES_NUMBER) if c1 != c2)
+    for c1 in range(MAX_F) for c2 in range(MAX_F) if c1 != c2)
 model.addConstrs(x[c1] * pair_selected[c1, c2] <= (x[c2] + M * x1_greater_x2[c1, c2]) * pair_selected[c1, c2]
-                 for c1 in range(FIXTURES_NUMBER) for c2 in range(FIXTURES_NUMBER) if c1 != c2)
+                 for c1 in range(MAX_F) for c2 in range(MAX_F) if c1 != c2)
 model.addConstrs(
     x[c2] * pair_selected[c1, c2] >= (x[c1] + EPS - M * (1 - x2_greater_x1[c1, c2])) * pair_selected[c1, c2]
-    for c1 in range(FIXTURES_NUMBER) for c2 in range(FIXTURES_NUMBER) if c1 != c2)
+    for c1 in range(MAX_F) for c2 in range(MAX_F) if c1 != c2)
 model.addConstrs(x[c2] * pair_selected[c1, c2] <= (x[c1] + M * x2_greater_x1[c1, c2]) * pair_selected[c1, c2]
-                 for c1 in range(FIXTURES_NUMBER) for c2 in range(FIXTURES_NUMBER) if c1 != c2)
+                 for c1 in range(MAX_F) for c2 in range(MAX_F) if c1 != c2)
 
 model.addConstrs(
-    (x[c2] + DIMS[c2][0] + BAR_SIZE) * pair_selected[c1, c2] <= (x[c1] + M * (1 - x1_greater_x2[c1, c2])) *
+    (x[c2] + fixture_dims_x[c2] + BAR_SIZE) * pair_selected[c1, c2] <= (x[c1] + M * (1 - x1_greater_x2[c1, c2])) *
     pair_selected[c1, c2]
-    for c1 in range(FIXTURES_NUMBER) for c2 in range(FIXTURES_NUMBER) if c1 != c2)
+    for c1 in range(MAX_F) for c2 in range(MAX_F) if c1 != c2)
 model.addConstrs(
-    (x[c1] + DIMS[c1][0] + BAR_SIZE) * pair_selected[c1, c2] <= (x[c2] + M * (1 - x2_greater_x1[c1, c2])) *
+    (x[c1] + fixture_dims_x[c1] + BAR_SIZE) * pair_selected[c1, c2] <= (x[c2] + M * (1 - x2_greater_x1[c1, c2])) *
     pair_selected[c1, c2]
-    for c1 in range(FIXTURES_NUMBER) for c2 in range(FIXTURES_NUMBER) if c1 != c2)
+    for c1 in range(MAX_F) for c2 in range(MAX_F) if c1 != c2)
 
 # symmetry breaking constraints
-model.addConstr(gp.quicksum(selected_fixture[c] for c in range(FIXTURES_NUMBER)) >= 1, name="at_least_one_fixture")
+model.addConstr(gp.quicksum(selected_fixture[c, t] for c in range(MAX_F) for t in range(N_FIXTURES_TYPE)) >= 2, name="at_least_one_fixture")
 
-model.addConstrs((selected_fixture[c] == 0) >> (x[c] <= 0) for c in range(FIXTURES_NUMBER))
-model.addConstrs((selected_fixture[c] == 0) >> (y[c] <= 0) for c in range(FIXTURES_NUMBER))
+
+model.addConstrs((q[c] == 0) >> (x[c] <= 0) for c in range(MAX_F))
+model.addConstrs((q[c] == 0) >> (y[c] <= 0) for c in range(MAX_F))
 
 model.addConstrs(
-    (x[c1] + y[c1]) + EPS >= (x[c2] + y[c2]) for c1 in range(FIXTURES_NUMBER) for c2 in
-    range(c1 + 1, FIXTURES_NUMBER) if
+    (x[c1] + y[c1]) + EPS >= (x[c2] + y[c2]) for c1 in range(MAX_F) for c2 in
+    range(c1 + 1, MAX_F) if
     FIXTURE_TYPE[c1] == FIXTURE_TYPE[c2])
 
 #Objective function
-#compute the center of cup
+# #compute the center of the fixtures
 model.addConstrs(
-    fixtures_center_x[c] == (x[c] + HALF_DIM[c][0]) * selected_fixture[c] for c in range(FIXTURES_NUMBER))
+    fixtures_center_x[c] == (x[c] + fixture_half_dims_x[c]) * q[c] for c in range(MAX_F))
 model.addConstrs(
-    fixtures_center_y[c] == (y[c] + HALF_DIM[c][1]) * selected_fixture[c] for c in range(FIXTURES_NUMBER))
+    fixtures_center_y[c] == (y[c] + fixture_half_dims_y[c]) * q[c] for c in range(MAX_F))
+
+#compute the weighted sum for the objective
+area_total = model.addVar(lb=0, ub=sum(FIXTURE_AREA), vtype=GRB.CONTINUOUS, name="area_total")
+area_fixtures = model.addVars(MAX_F, lb=0, ub=FIXTURE_A_DIMX * FIXTURE_A_DIMY, vtype=GRB.CONTINUOUS, name="area_fixtures")
+area_selected = model.addVars(MAX_F, lb=0, ub=FIXTURE_A_DIMX * FIXTURE_A_DIMY, vtype=GRB.CONTINUOUS, name="area_mul_center")
+
+model.addConstrs(area_selected[c] == area_fixtures[c] * q[c] for c in range(MAX_F))
 
 model.addConstr(
     weighted_cx_sum == gp.quicksum(
-        FIXTURE_AREA[c] * fixtures_center_x[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER)),
+        area_selected[c] * fixtures_center_x[c] for c in range(MAX_F)),
     name="weighted_cx_sum")
 model.addConstr(
     weighted_cy_sum == gp.quicksum(
-        FIXTURE_AREA[c] * fixtures_center_y[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER)),
+        area_selected[c] * fixtures_center_y[c] for c in range(MAX_F)),
     name="weighted_cy_sum")
 
-model.addConstr(area_total == gp.quicksum(FIXTURE_AREA[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER)),
+model.addConstrs(area_fixtures[c] == fixture_dims_x[c] * fixture_dims_y[c] for c in range(MAX_F))
+model.addConstr(area_total == gp.quicksum(area_fixtures[c] * q[c] for c in range(MAX_F)),
                 name="area_total")
 
-#compute the overall center of gravity
-model.addGenConstrNL(x_g, weighted_cx_sum / area_total, name="x_g")
-model.addGenConstrNL(y_g, weighted_cy_sum / area_total, name="y_g")
+model.addConstr(x_g * area_total == weighted_cx_sum, name="x_g")
+model.addConstr(y_g * area_total == weighted_cy_sum, name="y_g")
 
 
 #compute fixtures vertices
-model.addConstrs(x2[c] == x[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER))
-model.addConstrs(x3[c] == (x[c] + DIMS[c][0]) * selected_fixture[c] for c in range(FIXTURES_NUMBER))
-model.addConstrs(x4[c] == (x[c] + DIMS[c][0]) * selected_fixture[c] for c in range(FIXTURES_NUMBER))
+model.addConstrs(x2[c] == x[c] * q[c] for c in range(MAX_F))
+model.addConstrs(x3[c] == (x[c] + fixture_dims_x[c]) * q[c] for c in range(MAX_F))
+model.addConstrs(x4[c] == (x[c] + fixture_dims_x[c]) * q[c] for c in range(MAX_F))
 
-model.addConstrs(y2[c] == (y[c] + DIMS[c][1]) * selected_fixture[c] for c in range(FIXTURES_NUMBER))
-model.addConstrs(y3[c] == (y[c] + DIMS[c][1]) * selected_fixture[c] for c in range(FIXTURES_NUMBER))
-model.addConstrs(y4[c] == y[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER))
+model.addConstrs(y2[c] == (y[c] + fixture_dims_y[c]) * q[c] for c in range(MAX_F))
+model.addConstrs(y3[c] == (y[c] + fixture_dims_y[c]) * q[c] for c in range(MAX_F))
+model.addConstrs(y4[c] == y[c] * q[c] for c in range(MAX_F))
 
-for c in range(FIXTURES_NUMBER):
+for c in range(MAX_F):
     model.addGenConstrPow(y[c], y_square[c], 2)
     model.addGenConstrPow(y2[c], y2_square[c], 2)
     model.addGenConstrPow(y3[c], y3_square[c], 2)
@@ -319,10 +371,10 @@ for c in range(FIXTURES_NUMBER):
     model.addGenConstrPow(x4[c], x4_square[c], 2)
 
 #moments of inertia of fixtures
-model.addConstrs(xy_bl[c] == x[c] * y[c] for c in range(FIXTURES_NUMBER))
-model.addConstrs(xy_tl[c] == x2[c] * y2[c] for c in range(FIXTURES_NUMBER))
-model.addConstrs(xy_tr[c] == x3[c] * y3[c] for c in range(FIXTURES_NUMBER))
-model.addConstrs(xy_br[c] == x4[c] * y4[c] for c in range(FIXTURES_NUMBER))
+model.addConstrs(xy_bl[c] == x[c] * y[c] for c in range(MAX_F))
+model.addConstrs(xy_tl[c] == x2[c] * y2[c] for c in range(MAX_F))
+model.addConstrs(xy_tr[c] == x3[c] * y3[c] for c in range(MAX_F))
+model.addConstrs(xy_br[c] == x4[c] * y4[c] for c in range(MAX_F))
 
 max_jx, max_jy, max_jxy = bounds.get_max_moments_fixtures()
 
@@ -338,8 +390,10 @@ min_jy_terms_part1 = bounds.get_min_jy_terms()
 max_jxy_terms_part1 = bounds.get_max_jxy_terms()
 min_jxy_terms_part1 = bounds.get_min_jxy_terms()
 
+print("PRINTTTTTTTTTTTT")
+print(max_jxy)
 
-for c in range(FIXTURES_NUMBER):
+for c in range(MAX_F):
     com_term1 = model.addVar(lb=min_common_terms[0] if min_common_terms[0] < 0 else 0,
                       ub=max_common_terms[0] if max_common_terms[0] > 0 else 0, vtype=GRB.CONTINUOUS, name="com_term1")
     com_term2 = model.addVar(lb=max_common_terms[1] if max_common_terms[1] < 0 else 0,
@@ -448,11 +502,11 @@ for c in range(FIXTURES_NUMBER):
     model.addGenConstrAbs(jxy_fixture[c], res_jxy, "jxy_fixture_abs")
 
 #overall moments of inertia
-model.addConstr(area_total == gp.quicksum(FIXTURE_AREA[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER)), name="area_total")
+model.addConstr(area_total == gp.quicksum(FIXTURE_AREA[c] * q[c] for c in range(MAX_F)), name="area_total")
 
-model.addConstr(jx_g == gp.quicksum(jx_fixture[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER)), name="jx_g")
-model.addConstr(jy_g == gp.quicksum(jy_fixture[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER)), name="jy_g")
-model.addConstr(jxy_g == gp.quicksum(jxy_fixture[c] * selected_fixture[c] for c in range(FIXTURES_NUMBER)), name="jxy_g")
+model.addConstr(jx_g == gp.quicksum(jx_fixture[c] * q[c] for c in range(MAX_F)), name="jx_g")
+model.addConstr(jy_g == gp.quicksum(jy_fixture[c] * q[c] for c in range(MAX_F)), name="jy_g")
+model.addConstr(jxy_g == gp.quicksum(jxy_fixture[c] * q[c] for c in range(MAX_F)), name="jxy_g")
 
 model.addGenConstrPow(x_g, x_g_squared, 2)
 model.addGenConstrPow(y_g, y_g_squared, 2)
@@ -471,113 +525,69 @@ model.addGenConstrPow(jxy, jxy_squared, 2, name="jxy_squared")
 quad_expr1 = gp.QuadExpr(sub_jx_jy_squared)
 quad_expr2 = gp.QuadExpr(4 * jxy_squared)
 
-#model.addConstr(root == sub_jx_jy_squared + 4 * jxy_squared, name="root")
-#model.addGenConstrPow(root, square_of_root, 0.5, name="sqrt_of_root")
 model.addConstr(root == sub_jx_jy_squared + 4 * jxy_squared, name="root")
-#model.addConstr(square_of_root**2 == root)
 model.addGenConstrPow(square_of_root, root, 2.0, name="square_of_root")
 
 model.addGenConstrNL(i, 0.5 * (jx + jy) - 0.5 * square_of_root, name="i_equation")
 model.addGenConstrNL(j, 0.5 * (jx + jy) + 0.5 * square_of_root, name="j_equation")
 
 
-# model.addConstr(x[0] == 543.0)
-# model.addConstr(y[0] == 31.459999999999994)
-# model.addConstr(x[1] == 0.0)
-# model.addConstr(y[1] == 0.0)
-# model.addConstr(x[2] == 0.0)
-# model.addConstr(y[2] == 0.0)
-# model.addConstr(x[3] == 0.0)
-# model.addConstr(y[3] == 0.0)
-# model.addConstr(x[4] == 0.0)
-# model.addConstr(y[4] == 0.0)
-# model.addConstr(x[5] == 543.0)
-# model.addConstr(y[5] == 310.51000000000005)
-# model.addConstr(x[6] == 543.0000000000002)
-# model.addConstr(y[6] == 255.51000000000008)
-# model.addConstr(x[7] == 20.999999999999545)
-# model.addConstr(y[7] == 206.10999999999993)
-# model.addConstr(x[8] == 20.999999999999545)
-# model.addConstr(y[8] == 135.8600000000001)
-# model.addConstr(x[9] == 0.0)
-# model.addConstr(y[9] == 0.0)
-# model.addConstr(selected_fixture[0] == 1)
-# model.addConstr(selected_fixture[1] == 0)
-# model.addConstr(selected_fixture[2] == 0)
-# model.addConstr(selected_fixture[3] == 0)
-# model.addConstr(selected_fixture[4] == 0)
-# model.addConstr(selected_fixture[5] == 1)
-# model.addConstr(selected_fixture[6] == 1)
-# model.addConstr(selected_fixture[7] == 1)
-# model.addConstr(selected_fixture[8] == 1)
-# model.addConstr(selected_fixture[9] == 0)
-
 
 model.setObjective(i + j, GRB.MAXIMIZE)
-
-x_init = [543.0, 0.0, 0.0, 0.0, 0.0, 543.0, 543.0000000000002, 20.999999999999545, 20.999999999999545, 0.0]
-y_init = [31.459999999999994, 0.0, 0.0, 0.0, 0.0, 310.51000000000005, 255.51000000000008, 206.10999999999993, 135.8600000000001, 0.0]
-selected_fixture_init = [1, 0, 0, 0, 0, 1, 1, 1, 1, 0]
-i_init = 4.63510e+08
-j_init = 3.12943e+09
-
-
-for c in range(FIXTURES_NUMBER):
-    x[c].Start = x_init[c]
-    y[c].Start = y_init[c]
-    selected_fixture[c].Start = selected_fixture_init[c]
-
-i.Start = i_init
-j.Start = j_init
-
-# model.setParam("MIPFocus", 1)  # Focus on finding a feasible solution
-# model.setParam("Cuts", 2)       # Use aggressive cuts
-# model.setParam("VarBranch", 1)  # Change variable selection for branching
-# model.setParam("BranchDir", 1)  # Favor improving bounds
-# model.setParam("Heuristics", 0.5)  # Increase heuristic search
-# model.setParam("RINS", 10)      # Use RINS heuristic
-# model.setParam("NonConvex", 2)
-
-model.setParam("MIPFocus", 1)        # Feasibility focus
-model.setParam("Heuristics", 0.5)    # Stronger emphasis on heuristics
-#model.setParam("Presolve", 2)        # Aggressive presolve
-model.setParam("Cuts", 2)            # More cuts to reduce search space
-model.setParam("RINS", 10)           # More RINS to explore near .Start
-model.setParam("NoRelHeurTime", 1000) # Delay root relaxation, try feasible first
-model.setParam("NonConvex", 2)       # Allow nonconvex parts
 model.optimize()
 
+DM_TO_MM_CONVERSION = 100
+
 if model.SolCount > 0:
-    x_vals = [x[c].x  for c in range(FIXTURES_NUMBER) if selected_fixture[c].x == 1]
-    y_vals = [y[c].x  for c in range(FIXTURES_NUMBER) if selected_fixture[c].x == 1]
-    selected_fixture_type = [FIXTURE_TYPE[c] for c in range(FIXTURES_NUMBER) if selected_fixture[c].x == 1]
-    selected_fixture_vals = [int(selected_fixture[c].x) for c in range(FIXTURES_NUMBER) if selected_fixture[c].x == 1]
-    fixtures_center_x_vals = [fixtures_center_x[c].x  for c in range(FIXTURES_NUMBER) if selected_fixture[c].x == 1]
-    fixtures_center_y_vals = [fixtures_center_y[c].x  for c in range(FIXTURES_NUMBER) if selected_fixture[c].x == 1]
+    x_vals_DM = [x[c].x for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) if selected_fixture[c, t].x == 1]
+    y_vals_DM = [y[c].x for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) if selected_fixture[c, t].x == 1]
+
+    x_vals_mm = [val * DM_TO_MM_CONVERSION for val in x_vals_DM]
+    y_vals_mm = [val * DM_TO_MM_CONVERSION for val in y_vals_DM]
+
+    selected_fixture_type = [
+        int(fixture_type[c].x)
+        for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) if selected_fixture[c, t].x == 1
+    ]
+    selected_fixture_vals = [
+        int(selected_fixture[c, t].x) for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) if
+        selected_fixture[c, t].x == 1
+    ]
+
+    fixtures_center_x_vals_DM = [fixtures_center_x[c].x for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) if
+                                 selected_fixture[c, t].x == 1]
+    fixtures_center_y_vals_DM = [fixtures_center_y[c].x for c in range(MAX_F) for t in range(N_FIXTURES_TYPE) if
+                                 selected_fixture[c, t].x == 1]
+
+    fixtures_center_x_vals_mm = [val * DM_TO_MM_CONVERSION for val in fixtures_center_x_vals_DM]
+    fixtures_center_y_vals_mm = [val * DM_TO_MM_CONVERSION for val in fixtures_center_y_vals_DM]
 
     solution = {
-        "x": x_vals,
-        "y": y_vals,
+        "x": x_vals_mm,
+        "y": y_vals_mm,
         "selected_fixture": selected_fixture_vals,
         "fixture_type": selected_fixture_type,
-        "fixtures_center_x": fixtures_center_x_vals,
-        "fixtures_center_y": fixtures_center_y_vals,
-        "x_g": x_g.x,
-        "y_g": y_g.x,
+        "fixtures_center_x": fixtures_center_x_vals_mm,
+        "fixtures_center_y": fixtures_center_y_vals_mm,
+        "x_g": x_g.x * DM_TO_MM_CONVERSION,
+        "y_g": y_g.x * DM_TO_MM_CONVERSION,
         "objective_value": model.objVal
     }
 
-    file_path = '../resources/results.json'
-
+    file_path = '../resources/results_moments_obj.json'
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
     with open(file_path, 'w') as json_file:
         json.dump(solution, json_file, indent=4)
 
-    solution_displayer = ResultDisplayer(workpiece_vertices=[VERTEX_A, VERTEX_B, VERTEX_C, VERTEX_D, VERTEX_E, VERTEX_F, VERTEX_A])
+    vertices = [VERTEX_A, VERTEX_B, VERTEX_C, VERTEX_D, VERTEX_E , VERTEX_F, VERTEX_A]
+
+    solution_displayer = ResultDisplayer(
+        workpiece_vertices=[(x * DM_TO_MM_CONVERSION, y * DM_TO_MM_CONVERSION) for x, y in vertices])
     solution_displayer.show_results(file_path)
+
 else:
-    print("No solution found :(")
+    print("No optimal solution found :(")
 
 
 
