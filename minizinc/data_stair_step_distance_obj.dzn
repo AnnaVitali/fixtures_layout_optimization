@@ -1,0 +1,38 @@
+max_dim_fixture = 145;
+max_half_dim_fixture = 73;
+max_area_fixture = 21025;
+
+width = 689;
+height = 394;
+available_surface = 175769;
+
+nline_below = 2;
+m_below = [0.20, -0.58];
+q_below = [257.91, 781.92];
+
+nline_above = 2;
+m_above = [-0.20, 0.54];
+q_above = [139.06, -356.21];
+
+nline_left = 1;
+q_left = [20];
+
+nline_right = 1;
+q_right = [689];
+
+bar_size = 145;
+max_f = 4;
+
+ntypes = 2;
+number = [5, 5];
+
+half_dims = [|73, 73
+             |73, 28
+             |];
+
+dims = [| 145, 145
+        | 145, 55
+        |];
+        
+%area = [21025, 21025, 21025, 21025, 7975, 7975, 7975];
+        
